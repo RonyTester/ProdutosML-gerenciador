@@ -338,12 +338,20 @@ const renderProducts = async () => {
                 </button>
             </div>
             <img src="${product.image}" alt="${product.name}" class="product-image">
-            <h3 class="product-name">${product.name}</h3>
-            <p class="product-category">${categories[product.category] || product.category}</p>
-            <p class="product-price">${formatPrice(product.price)}</p>
-            <div class="product-links">
-                <a href="${product.magalu_link}" target="_blank" class="store-link magalu-link">Ver na Magalu</a>
-                <a href="${product.ml_link}" target="_blank" class="store-link ml-link">Ver no Mercado Livre</a>
+            <div class="product-info">
+                <h3 class="product-name">${product.name}</h3>
+                <p class="product-category">${categories[product.category] || product.category}</p>
+                <p class="product-price">${formatPrice(product.price)}</p>
+                <div class="product-links">
+                    <a href="${product.magalu_link}" target="_blank" class="store-link magalu-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        Ver na Magalu
+                    </a>
+                    <a href="${product.ml_link}" target="_blank" class="store-link ml-link">
+                        <i class="fas fa-shopping-bag"></i>
+                        Ver no Mercado Livre
+                    </a>
+                </div>
             </div>
         `;
         productsContainer.appendChild(productCard);
