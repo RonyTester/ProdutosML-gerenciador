@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WDS DISTRIBUIÇÕES - Gerenciador de Produtos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>WDS DISTRIBUIÇÕES</h1>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar produtos...">
+                    <button id="searchBtn"><i class="fas fa-search"></i></button>
+                </div>
+                <select id="categoryFilter">
+                    <option value="">Todas as Categorias</option>
+                    <option value="celulares">Celulares e Smartphones</option>
+                    <option value="audio">Áudio</option>
+                    <option value="casa_construcao">Casa e Construção</option>
+                    <option value="eletroportateis">Eletroportáteis</option>
+                    <option value="utilidades_domesticas">Utilidades Domésticas</option>
+                    <option value="relogios">Relógios</option>
+                    <option value="brinquedos">Brinquedos</option>
+                    <option value="ar_ventilacao">Ar e Ventilação</option>
+                    <option value="esporte_lazer">Esporte e Lazer</option>
+                    <option value="beleza_perfumaria">Beleza e Perfumaria</option>
+                    <option value="tv_video">TV e Video</option>
+                    <option value="saude">Saúde e Cuidados Pessoais</option>
+                    <option value="automotivo">Automotivo</option>
+                    <option value="casa_inteligente">Casa Inteligente</option>
+                    <option value="mercado">Mercado</option>
+                    <option value="cameras">Câmeras e Drones</option>
+                    <option value="cama_mesa_banho">Cama, Mesa e Banho</option>
+                    <option value="ferramentas">Ferramentas</option>
+                    <option value="games">Games</option>
+                    <option value="comercio_industria">Comércio e Indústria</option>
+                    <option value="recem_chegados">Recém Chegados</option>
+                </select>
+            </div>
+            <button id="addProductBtn">Adicionar Produto</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard">
+            <div class="stats">
+                <div class="stat-card">
+                    <i class="fas fa-box"></i>
+                    <div class="stat-info">
+                        <h3>Total de Produtos</h3>
+                        <p id="totalProducts">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-tags"></i>
+                    <div class="stat-info">
+                        <h3>Categorias</h3>
+                        <p id="totalCategories">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="products-container">
+            <div class="category-tabs" id="categoryTabs">
+                <!-- Tabs serão inseridas dinamicamente -->
+            </div>
+            <div class="products-grid" id="productsContainer">
+                <!-- Os produtos serão inseridos aqui dinamicamente -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para adicionar/editar produtos -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adicionar Produto</h2>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Nome do Produto:</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="productCategory">Categoria:</label>
+                    <select id="productCategory" required>
+                        <option value="celulares">Celulares e Smartphones</option>
+                        <option value="audio">Áudio</option>
+                        <option value="casa_construcao">Casa e Construção</option>
+                        <option value="eletroportateis">Eletroportáteis</option>
+                        <option value="utilidades_domesticas">Utilidades Domésticas</option>
+                        <option value="relogios">Relógios</option>
+                        <option value="brinquedos">Brinquedos</option>
+                        <option value="ar_ventilacao">Ar e Ventilação</option>
+                        <option value="esporte_lazer">Esporte e Lazer</option>
+                        <option value="beleza_perfumaria">Beleza e Perfumaria</option>
+                        <option value="tv_video">TV e Video</option>
+                        <option value="saude">Saúde e Cuidados Pessoais</option>
+                        <option value="automotivo">Automotivo</option>
+                        <option value="casa_inteligente">Casa Inteligente</option>
+                        <option value="mercado">Mercado</option>
+                        <option value="cameras">Câmeras e Drones</option>
+                        <option value="cama_mesa_banho">Cama, Mesa e Banho</option>
+                        <option value="ferramentas">Ferramentas</option>
+                        <option value="games">Games</option>
+                        <option value="comercio_industria">Comércio e Indústria</option>
+                        <option value="recem_chegados">Recém Chegados</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="productImage">URL da Imagem:</label>
+                    <input type="url" id="productImage" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Preço:</label>
+                    <input type="number" id="productPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="magaluLink">Link Magazine Luiza:</label>
+                    <input type="url" id="magaluLink" required>
+                </div>
+                <div class="form-group">
+                    <label for="mlLink">Link Mercado Livre:</label>
+                    <input type="url" id="mlLink" required>
+                </div>
+                <button type="submit">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html> 
