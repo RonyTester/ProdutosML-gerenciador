@@ -23,6 +23,11 @@ let allProducts = [];
 let activeCategory = '';
 let searchTerm = '';
 
+// Variáveis para controle de desfazer
+let lastDeletedProduct = null;
+let undoToast = null;
+let undoTimeout = null;
+
 // Categorias disponíveis
 const categories = {
     'celulares': 'Celulares e Smartphones',
@@ -138,6 +143,171 @@ const renderCategoryTabs = () => {
     });
 };
 
+// Função para mostrar o modal de confirmação
+const showConfirmModal = (productId, productName) => {
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'confirm-modal';
+    confirmModal.innerHTML = `
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-icon">
+                <i class="fas fa-trash"></i>
+            </div>
+            <h2>Confirmar Exclusão</h2>
+            <p>Tem certeza que deseja excluir o produto "${productName}"?</p>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn confirm-btn-cancel">Cancelar</button>
+                <button class="confirm-btn confirm-btn-delete">Excluir</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(confirmModal);
+    
+    // Mostrar o modal com animação
+    setTimeout(() => confirmModal.style.display = 'block', 0);
+    
+    return new Promise((resolve) => {
+        confirmModal.querySelector('.confirm-btn-delete').addEventListener('click', () => {
+            document.body.removeChild(confirmModal);
+            resolve(true);
+        });
+        
+        confirmModal.querySelector('.confirm-btn-cancel').addEventListener('click', () => {
+            document.body.removeChild(confirmModal);
+            resolve(false);
+        });
+    });
+};
+
+// Função para mostrar o toast de desfazer
+const showUndoToast = (product) => {
+    if (undoToast) {
+        document.body.removeChild(undoToast);
+        clearTimeout(undoTimeout);
+    }
+    
+    undoToast = document.createElement('div');
+    undoToast.className = 'undo-toast';
+    undoToast.innerHTML = `
+        <span>Produto removido</span>
+        <button class="undo-btn">Desfazer</button>
+    `;
+    document.body.appendChild(undoToast);
+    
+    undoToast.querySelector('.undo-btn').addEventListener('click', async () => {
+        if (lastDeletedProduct) {
+            await saveProduct(lastDeletedProduct);
+            allProducts = await loadProducts();
+            renderProducts();
+            document.body.removeChild(undoToast);
+            lastDeletedProduct = null;
+        }
+    });
+    
+    undoTimeout = setTimeout(() => {
+        if (undoToast && undoToast.parentNode) {
+            document.body.removeChild(undoToast);
+        }
+        lastDeletedProduct = null;
+    }, 5000);
+};
+
+// Função para editar produto
+const editProduct = async (product) => {
+    // Preencher o formulário com os dados do produto
+    document.getElementById('productName').value = product.name;
+    document.getElementById('productCategory').value = product.category;
+    document.getElementById('productImage').value = product.image;
+    document.getElementById('productPrice').value = product.price;
+    document.getElementById('magaluLink').value = product.magalu_link;
+    document.getElementById('mlLink').value = product.ml_link;
+    
+    // Modificar o formulário para modo de edição
+    const submitBtn = productForm.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Atualizar Produto';
+    productForm.dataset.editMode = 'true';
+    productForm.dataset.editId = product.id;
+    
+    // Mostrar o modal
+    modal.style.display = 'block';
+};
+
+// Função para atualizar o event listener do formulário
+productForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const productData = {
+        name: document.getElementById('productName').value,
+        category: document.getElementById('productCategory').value,
+        image: document.getElementById('productImage').value,
+        price: parseFloat(document.getElementById('productPrice').value),
+        magalu_link: document.getElementById('magaluLink').value,
+        ml_link: document.getElementById('mlLink').value
+    };
+
+    if (productForm.dataset.editMode === 'true') {
+        // Modo de edição
+        const productId = productForm.dataset.editId;
+        try {
+            const { error } = await supabase
+                .from('products')
+                .update(productData)
+                .eq('id', productId);
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Erro ao atualizar produto:', error);
+            alert('Erro ao atualizar produto. Tente novamente.');
+            return;
+        }
+    } else {
+        // Modo de criação
+        await saveProduct(productData);
+    }
+
+    allProducts = await loadProducts();
+    renderProducts();
+
+    // Resetar formulário e fechar modal
+    productForm.reset();
+    productForm.dataset.editMode = 'false';
+    productForm.dataset.editId = '';
+    const submitBtn = productForm.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Adicionar Produto';
+    modal.style.display = 'none';
+});
+
+// Função para atualizar a função de deletar produto
+const deleteProduct = async (productId) => {
+    const product = allProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const shouldDelete = await showConfirmModal(productId, product.name);
+    if (!shouldDelete) return;
+
+    try {
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', productId);
+
+        if (error) throw error;
+        
+        // Guardar o produto deletado para possível desfazer
+        lastDeletedProduct = product;
+        
+        // Atualizar a lista de produtos
+        allProducts = allProducts.filter(p => p.id !== productId);
+        renderProducts();
+        
+        // Mostrar o toast de desfazer
+        showUndoToast(product);
+    } catch (error) {
+        console.error('Erro ao remover produto:', error);
+        alert('Erro ao remover produto. Tente novamente.');
+    }
+};
+
+// Função para atualizar a função de renderização dos produtos
 const renderProducts = async () => {
     if (!allProducts.length) {
         allProducts = await loadProducts();
@@ -159,6 +329,14 @@ const renderProducts = async () => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
+            <div class="product-actions">
+                <button class="edit-btn" onclick="editProduct(${JSON.stringify(product).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-btn" onclick="deleteProduct(${product.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
             <img src="${product.image}" alt="${product.name}" class="product-image">
             <h3 class="product-name">${product.name}</h3>
             <p class="product-category">${categories[product.category] || product.category}</p>
@@ -174,6 +352,10 @@ const renderProducts = async () => {
     updateStats();
     renderCategoryTabs();
 };
+
+// Tornar as funções globais
+window.deleteProduct = deleteProduct;
+window.editProduct = editProduct;
 
 // Event Listeners
 addProductBtn.addEventListener('click', () => {
@@ -202,27 +384,6 @@ searchBtn.addEventListener('click', () => {
 categoryFilter.addEventListener('change', (e) => {
     activeCategory = e.target.value;
     renderProducts();
-});
-
-productForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const newProduct = {
-        name: document.getElementById('productName').value,
-        category: document.getElementById('productCategory').value,
-        image: document.getElementById('productImage').value,
-        price: parseFloat(document.getElementById('productPrice').value),
-        magalu_link: document.getElementById('magaluLink').value,
-        ml_link: document.getElementById('mlLink').value
-    };
-
-    await saveProduct(newProduct);
-    allProducts = await loadProducts();
-    renderProducts();
-
-    // Limpar formulário e fechar modal
-    productForm.reset();
-    modal.style.display = 'none';
 });
 
 // Inicializar a aplicação
