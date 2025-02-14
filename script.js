@@ -1,7 +1,9 @@
-import { SUPABASE_CONFIG } from './config.js';
-
 // Configuração do Supabase
-const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+const SUPABASE_URL = window.SUPABASE_URL || 'https://kmfdbcijumvxxkoehuzl.supabase.co';
+const SUPABASE_KEY = window.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttZmRiY2lqdW12eHhrb2VodXpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1MDQxMjUsImV4cCI6MjA1NTA4MDEyNX0.7GZwiE8arbOza12UiUubd2m8q4UJI7Aae4bHnQYnD_c';
+
+// Inicialização do Supabase
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Elementos do DOM
 const modal = document.getElementById('productModal');
